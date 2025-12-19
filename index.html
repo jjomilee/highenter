@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>내신성적 산출 시뮬레이션(고입) - 로컬</title>
+  <style>
+    /* “교육청 페이지” 느낌: 밝은 배경 + 표 중심 + 회색 보더 */
+    :root{
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --line:#d9dde7;
+      --line2:#c8cedd;
+      --head:#eef2f9;
+      --head2:#f4f6fb;
+      --text:#222;
+      --muted:#666;
+      --accent:#1f5fbf;
+      --accent2:#0c3d8a;
+      --danger:#b42318;
+    }
+    body{ margin:0; background:var(--bg); color:var(--text);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif;
+    }
+    .wrap{ max-width:1100px; margin:24px auto; padding:0 16px 60px; }
+    .titlebar{
+      background:linear-gradient(90deg,var(--accent2),var(--accent));
+      color:#fff; border-radius:10px; padding:16px 18px; box-shadow:0 8px 18px rgba(0,0,0,.08);
+    }
+    .titlebar h1{ margin:0; font-size:18px; font-weight:700; }
+    .titlebar p{ margin:6px 0 0; font-size:13px; opacity:.95; line-height:1.4; }
+    .grid{ display:grid; grid-template-columns: 1fr; gap:14px; margin-top:14px; }
+    @media (min-width: 980px){ .grid{ grid-template-columns: 1.15fr .85fr; } }
+
+    .card{ background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+    .card .hd{ background:var(--head); border-bottom:1px solid var(--line); padding:12px 14px; font-weight:700; }
+    .card .bd{ padding:12px 14px; }
+
+    .hint{ font-size:12px; color:var(--muted); line-height:1.5; }
+    .pill{ display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--line2); font-size:12px; color:var(--muted); background:var(--head2); }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+    .field{ min-width: 160px; flex:1; }
+    label{ display:block; font-size:12px; color:var(--muted); margin:0 0 6px; }
+    input, select{
+      width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid var(--line2);
+      border-radius:8px; background:#fff; outline:none;
+    }
+    input:focus, select:focus{ border-color: var(--accent); box-shadow:0 0 0 3px rgba(31,95,191,.15); }
+
+    table{ width:100%; border-collapse:collapse; margin-top:10px; table-layout:fixed; }
+    th, td{ border:1px solid var(--line); padding:8px 8px; font-size:13px; }
+    th{ background:var(--head); text-align:center; }
+    td{ background:#fff; }
+    td input, td select{ padding:6px 8px; border-radius:6px; }
+
+    .btnbar{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    button{
+      cursor:pointer; padding:8px 10px; border-radius:8px; border:1px solid var(--line2);
+      background:var(--head2); color:var(--text);
+    }
+    button.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+    button.danger{ background:#fff; border-color:rgba(180,35,24,.35); color:var(--danger); }
+    button:hover{ filter:brightness(.98); }
+
+    details{ border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-top:12px; }
+    summary{ cursor:pointer; list-style:none; padding:10px 12px; background:var(--head2); font-weight:700; }
+    summary::-webkit-details-marker{ display:none; }
+    details .inside{ padding:10px 12px; }
+
+    .resultBox{
+      border:1px solid var(--line2); border-radius:10px; padding:12px 12px; background:#fff;
+      display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    }
+    .big{ font-size:22px; font-weight:800; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+
+    .kpiTable td{ text-align:right; }
+    .kpiTable td:first-child{ text-align:left; }
+
+    .footnote{ margin-top:12px; font-size:12px; color:var(--muted); line-height:1.5; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="titlebar">
+      <h1>내신성적 산출 시뮬레이션(고입) - 로컬 버전</h1>
+      <p>
+        과목별로 <b>성취도(A~E)</b>와 <b>원점수(0~100)</b>를 입력하면, 이미지 기준의 산출식으로 자동 계산합니다.
+        <span class="pill">교과 150점(일반 120 + 체·예 30)</span>
+      </p>
+    </div>
+
+    <div class="grid">
+      <!-- 교과 -->
+      <div class="card">
+        <div class="hd">교과활동상황 (150점)</div>
+        <div class="bd">
+          <div class="hint">
+            - 미입력 행은 자동으로 계산에서 제외됩니다(빈칸 그대로 가능).<br/>
+            - 성취도 환산값은 아래 “성취도 환산표”에서 조정할 수 있습니다.
+          </div>
+
+          <details open>
+            <summary>성취도 환산표(기본: A=5, B=4, C=3, D=2, E=1)</summary>
+            <div class="inside">
+              <div class="row">
+                <div class="field"><label>A</label><input id="mapA" type="number" step="0.1" value="5"></div>
+                <div class="field"><label>B</label><input id="mapB" type="number" step="0.1" value="4"></div>
+                <div class="field"><label>C</label><input id="mapC" type="number" step="0.1" value="3"></div>
+                <div class="field"><label>D</label><input id="mapD" type="number" step="0.1" value="2"></div>
+                <div class="field"><label>E</label><input id="mapE" type="number" step="0.1" value="1"></div>
+              </div>
+              <div class="hint" style="margin-top:8px;">
+                ※ 학교/지역에서 사용하는 환산 규칙이 다르면 여기 값만 바꾸면 전체 계산이 같이 바뀝니다.
+              </div>
+            </div>
+          </details>
+
+          <!-- 일반교과 -->
+          <details open>
+            <summary>일반교과 (총 120점) - 학기별 과목 입력</summary>
+            <div class="inside">
+
+              <div class="hint">
+                학기점수 = 기본점수 + (성취도평균×계수) + (원점수평균×계수), 학기별 만점 상한 적용
+              </div>
+
+              <!-- 1-2 -->
+              <section data-term="g12" style="margin-top:12px;">
+                <div class="row" style="justify-content:space-between;">
+                  <div><b>1학년 2학기</b> <span class="pill">최대 12점</span></div>
+                  <div class="btnbar">
+                    <button type="button" data-add="g12">과목 추가</button>
+                    <button type="button" class="danger" data-clear="g12">전체 비우기</button>
+                  </div>
+                </div>
+                <table>
+                  <colgroup>
+                    <col style="width:44%"><col style="width:18%"><col style="width:24%"><col style="width:14%">
+                  </colgroup>
+                  <thead>
+                    <tr><th>과목명</th><th>성취도</th><th>원점수(0~100)</th><th>삭제</th></tr>
+                  </thead>
+                  <tbody id="tbody_g12"></tbody>
+                </table>
+                <div class="hint mono" id="summary_g12" style="margin-top:6px;"></div>
+              </section>
+
+              <!-- 2-1 -->
+              <section data-term="g21" style="margin-top:14px;">
+                <div class="row" style="justify-content:space-between;">
+                  <div><b>2학년 1학기</b> <span class="pill">최대 24점</span></div>
+                  <div class="btnbar">
+                    <button type="button" data-add="g21">과목 추가</button>
+                    <button type="button" class="danger" data-clear="g21">전체 비우기</button>
+                  </div>
+                </div>
+                <table>
+                  <colgroup>
+                    <col style="width:44%"><col style="width:18%"><col style="width:24%"><col style="width:14%">
+                  </colgroup>
+                  <thead>
+                    <tr><th>과목명</th><th>성취도</th><th>원점수(0~100)</th><th>삭제</th></tr>
+                  </thead>
+                  <tbody id="tbody_g21"></tbody>
+                </table>
+                <div class="hint mono" id="summary_g21" style="margin-top:6px;"></div>
+              </section>
+
+              <!-- 2-2 -->
+              <section data-term="g22" style="margin-top:14px;">
+                <div class="row" style="justify-content:space-between;">
+                  <div><b>2학년 2학기</b> <span class="pill">최대 24점</span></div>
+                  <div class="btnbar">
+                    <button type="button" data-add="g22">과목 추가</button>
+                    <button type="button" class="danger" data-clear="g22">전체 비우기</button>
+                  </div>
+                </div>
+                <table>
+                  <colgroup>
+                    <col style="width:44%"><col style="width:18%"><col style="width:24%"><col style="width:14%">
+                  </colgroup>
+                  <thead>
+                    <tr><th>과목명</th><th>성취도</th><th>원점수(0~100)</th><th>삭제</th></tr>
+                  </thead>
+                  <tbody id="tbody_g22"></tbody>
+                </table>
+                <div class="hint mono" id="summary_g22" style="margin-top:6px;"></div>
+              </section>
+
+              <!-- 3-1 -->
+              <section data-term="g31" style="margin-top:14px;">
+                <div class="row" style="justify-content:space-between;">
+                  <div><b>3학년 1학기</b> <span class="pill">최대 30점</span></div>
+                  <div class="btnbar">
+                    <button type="button" data-add="g31">과목 추가</button>
+                    <button type="button" class="danger" data-clear="g31">전체 비우기</button>
+                  </div>
+                </div>
+                <table>
+                  <colgroup>
+                    <col style="width:44%"><col style="width:18%"><col style="width:24%"><col style="width:14%">
+                  </colgroup>
+                  <thead>
+                    <tr><th>과목명</th><th>성취도</th><th>원점수(0~100)</th><th>삭제</th></tr>
+                  </thead>
+                  <tbody id="tbody_g31"></tbody>
+                </table>
+                <div class="hint mono" id="summary_g31" style="margin-top:6px;"></div>
+              </section>
+
+              <!-- 3-2 -->
+              <section data-term="g32" style="margin-top:14px;">
+                <div class="row" style="justify-content:space-between;">
+                  <div><b>3학년 2학기</b> <span class="pill">최대 30점</span></div>
+                  <div class="btnbar">
+                    <button type="button" data-add="g32">과목 추가</button>
+                    <button type="button" class="danger" data-clear="g32">전체 비우기</button>
+                  </div>
+                </div>
+                <table>
+                  <colgroup>
+                    <col style="width:44%"><col style="width:18%"><col style="width:24%"><col style="width:14%">
+                  </colgroup>
+                  <thead>
+                    <tr><th>과목명</th><th>성취도</th><th>원점수(0~100)</th><th>삭제</th></tr>
+                  </thead>
+                  <tbody id="tbody_g32"></tbody>
+                </table>
+                <div class="hint mono" id="summary_g32" style="margin-top:6px;"></div>
+              </section>
+
+            </div>
+          </details>
+
+          <!-- 체육·예술 -->
+          <details>
+            <summary>체육·예술교과 (총 30점) - 과목 입력</summary>
+            <div class="inside">
+              <div class="hint">
+                점수 = 10 + 20 × (3×a + 2×b + 1×c) / (3×N) (상한 30)<br/>
+                여기서는 과목별 성취도를 입력하면 a(A), b(B), c(C), N(입력된 과목 수)을 자동 집계합니다.
+              </div>
+              <div class="btnbar">
+                <button type="button" data-add="pe">과목 추가</button>
+                <button type="button" class="danger" data-clear="pe">전체 비우기</button>
+              </div>
+              <table>
+                <colgroup>
+                  <col style="width:52%"><col style="width:24%"><col style="width:14%"><col style="width:10%">
+                </colgroup>
+                <thead>
+                  <tr><th>과목명</th><th>성취도(A/B/C/D/E)</th><th>삭제</th><th></th></tr>
+                </thead>
+                <tbody id="tbody_pe"></tbody>
+              </table>
+              <div class="hint mono" id="summary_pe" style="margin-top:6px;"></div>
+            </div>
+          </details>
+
+        </div>
+      </div>
+
+      <!-- 결과 -->
+      <div class="card">
+        <div class="hd">산출 결과</div>
+        <div class="bd">
+          <div class="resultBox">
+            <div>
+              <div class="hint">교과활동 합계</div>
+              <div class="big mono"><span id="sumSubject">0.00</span> / 150</div>
+            </div>
+            <div class="pill" id="status">입력 대기</div>
+          </div>
+
+          <table class="kpiTable" style="margin-top:12px;">
+            <thead>
+              <tr><th>구분</th><th>점수</th><th>만점</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>일반교과 합</td><td class="mono" id="sumGeneral">0.00</td><td class="mono">120</td></tr>
+              <tr><td>체육·예술교과</td><td class="mono" id="sumPE">0.00</td><td class="mono">30</td></tr>
+              <tr><td><b>교과활동 합</b></td><td class="mono" id="sumSubject2">0.00</td><td class="mono">150</td></tr>
+            </tbody>
+          </table>
+
+          <details style="margin-top:12px;">
+            <summary>계산 로그(학기별)</summary>
+            <div class="inside">
+              <pre id="log" class="mono" style="white-space:pre-wrap; margin:0; color:var(--muted);"></pre>
+            </div>
+          </details>
+
+          <div class="btnbar" style="margin-top:12px;">
+            <button type="button" class="primary" id="btnAddAll">각 학기 5과목씩 기본 생성</button>
+            <button type="button" class="danger" id="btnResetAll">전체 초기화</button>
+          </div>
+
+          <div class="footnote">
+            ※ 이 페이지는 로컬 계산기 예시입니다. 실제 전형요강/교육청 지침이 바뀌면 계수/구간표를 맞춰 수정해야 합니다.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function num(v){
+    const x = parseFloat(v);
+    return Number.isFinite(x) ? x : 0;
+  }
+  function clamp(x, lo, hi){ return Math.min(hi, Math.max(lo, x)); }
+  function round2(x){ return Math.round((x + Number.EPSILON) * 100) / 100; }
+
+  function getMap(){
+    return {
+      A: num($("mapA").value),
+      B: num($("mapB").value),
+      C: num($("mapC").value),
+      D: num($("mapD").value),
+      E: num($("mapE").value),
+    };
+  }
+
+  function gradeSelectHtml(value=""){
+    const opts = ["","A","B","C","D","E"].map(g => {
+      const label = g === "" ? "선택" : g;
+      const sel = (g === value) ? "selected" : "";
+      return `<option value="${g}" ${sel}>${label}</option>`;
+    }).join("");
+    return `<select class="grade">${opts}</select>`;
+  }
+
+  function makeRow(term){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input class="subj" type="text" value="" placeholder=""></td>
+      <td>${gradeSelectHtml("")}</td>
+      <td><input class="raw" type="number" min="0" max="100" step="0.1" value="" placeholder=""></td>
+      <td style="text-align:center;"><button type="button" class="danger btnDel">삭제</button></td>
+    `;
+    wireRow(tr);
+    $("tbody_" + term).appendChild(tr);
+  }
+
+  function makeRowPE(){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input class="subj" type="text" value="" placeholder=""></td>
+      <td>${gradeSelectHtml("")}</td>
+      <td style="text-align:center;"><button type="button" class="danger btnDel">삭제</button></td>
+      <td></td>
+    `;
+    // PE table은 raw가 없음
+    wireRow(tr);
+    $("tbody_pe").appendChild(tr);
+  }
+
+  function wireRow(tr){
+    tr.querySelectorAll("input,select").forEach(el => {
+      el.addEventListener("input", recalc);
+      el.addEventListener("change", recalc);
+    });
+    const del = tr.querySelector(".btnDel");
+    if(del){
+      del.addEventListener("click", () => { tr.remove(); recalc(); });
+    }
+  }
+
+  function clearTerm(term){
+    const tb = $("tbody_" + term);
+    while(tb.firstChild) tb.removeChild(tb.firstChild);
+    recalc();
+  }
+  function clearPE(){
+    const tb = $("tbody_pe");
+    while(tb.firstChild) tb.removeChild(tb.firstChild);
+    recalc();
+  }
+
+  function collectTerm(term){
+    // 빈칸은 있는대로 둠: 계산할 때만 "유효 행"을 골라냄
+    const map = getMap();
+    const rows = Array.from($("tbody_" + term).querySelectorAll("tr"));
+    let n = 0, achSum = 0, rawSum = 0;
+
+    for(const r of rows){
+      const subj = (r.querySelector(".subj")?.value ?? "").trim();
+      const grade = (r.querySelector(".grade")?.value ?? "").trim();
+      const rawStr = (r.querySelector(".raw")?.value ?? "").trim();
+
+      const hasSomething = subj !== "" || grade !== "" || rawStr !== "";
+      if(!hasSomething) continue; // 완전 빈 행은 제외
+
+      // 과목으로 인정: 성취도나 원점수 중 하나라도 있으면 카운트
+      // (사용자가 빈칸 유지해도 오류 안 나게)
+      n += 1;
+      if(grade && map[grade] != null) achSum += map[grade];
+      if(rawStr !== "") rawSum += num(rawStr);
+    }
+    return { n, achSum, rawSum };
+  }
+
+  function termScore({n, achSum, rawSum, base, kAch, kRaw, max}){
+    if(n <= 0) return { score: 0, detail: `과목 입력 없음 → 0점` };
+    const s = base + (achSum / n) * kAch + (rawSum / n) * kRaw;
+    const capped = clamp(s, 0, max);
+    return {
+      score: capped,
+      detail: `${base} + (성취도평균 ${round2(achSum/n)})×${kAch} + (원점수평균 ${round2(rawSum/n)})×${kRaw} = ${round2(s)} → ${round2(capped)}`
+    };
+  }
+
+  function collectPE(){
+    const rows = Array.from($("tbody_pe").querySelectorAll("tr"));
+    let N = 0, a = 0, b = 0, c = 0;
+
+    for(const r of rows){
+      const subj = (r.querySelector(".subj")?.value ?? "").trim();
+      const grade = (r.querySelector(".grade")?.value ?? "").trim();
+      const hasSomething = subj !== "" || grade !== "";
+      if(!hasSomething) continue; // 완전 빈 행 제외
+
+      N += 1;
+      if(grade === "A") a += 1;
+      else if(grade === "B") b += 1;
+      else if(grade === "C") c += 1;
+    }
+    return { N, a, b, c };
+  }
+
+  function peScore({N,a,b,c}){
+    if(N <= 0) return 0;
+    const s = 10 + 20 * (3*a + 2*b + 1*c) / (3*N);
+    return clamp(s, 0, 30);
+  }
+
+  function anyInputExists(){
+    const ids = ["g12","g21","g22","g31","g32"];
+    for(const term of ids){
+      const rows = Array.from($("tbody_"+term).querySelectorAll("tr"));
+      for(const r of rows){
+        const subj = (r.querySelector(".subj")?.value ?? "").trim();
+        const grade = (r.querySelector(".grade")?.value ?? "").trim();
+        const raw = (r.querySelector(".raw")?.value ?? "").trim();
+        if(subj || grade || raw) return true;
+      }
+    }
+    const peRows = Array.from($("tbody_pe").querySelectorAll("tr"));
+    for(const r of peRows){
+      const subj = (r.querySelector(".subj")?.value ?? "").trim();
+      const grade = (r.querySelector(".grade")?.value ?? "").trim();
+      if(subj || grade) return true;
+    }
+    // 환산표 변경도 입력으로 보지 않음
+    return false;
+  }
+
+  function recalc(){
+    const g12 = collectTerm("g12");
+    const g21 = collectTerm("g21");
+    const g22 = collectTerm("g22");
+    const g31 = collectTerm("g31");
+    const g32 = collectTerm("g32");
+
+    const s12 = termScore({ ...g12, base:4,  kAch:0.8, kRaw:0.04, max:12 });
+    const s21 = termScore({ ...g21, base:8,  kAch:1.6, kRaw:0.08, max:24 });
+    const s22 = termScore({ ...g22, base:8,  kAch:1.6, kRaw:0.08, max:24 });
+    const s31 = termScore({ ...g31, base:10, kAch:2.0, kRaw:0.10, max:30 });
+    const s32 = termScore({ ...g32, base:10, kAch:2.0, kRaw:0.10, max:30 });
+
+    const general = s12.score + s21.score + s22.score + s31.score + s32.score; // max 120
+
+    const peAgg = collectPE();
+    const pe = peScore(peAgg);
+
+    const subject = general + pe; // max 150
+
+    $("sumGeneral").textContent = round2(general).toFixed(2);
+    $("sumPE").textContent = round2(pe).toFixed(2);
+    $("sumSubject").textContent = round2(subject).toFixed(2);
+    $("sumSubject2").textContent = round2(subject).toFixed(2);
+
+    $("summary_g12").textContent = `과목수=${g12.n}, 성취도합=${round2(g12.achSum)}, 원점수합=${round2(g12.rawSum)} → ${round2(s12.score).toFixed(2)}점`;
+    $("summary_g21").textContent = `과목수=${g21.n}, 성취도합=${round2(g21.achSum)}, 원점수합=${round2(g21.rawSum)} → ${round2(s21.score).toFixed(2)}점`;
+    $("summary_g22").textContent = `과목수=${g22.n}, 성취도합=${round2(g22.achSum)}, 원점수합=${round2(g22.rawSum)} → ${round2(s22.score).toFixed(2)}점`;
+    $("summary_g31").textContent = `과목수=${g31.n}, 성취도합=${round2(g31.achSum)}, 원점수합=${round2(g31.rawSum)} → ${round2(s31.score).toFixed(2)}점`;
+    $("summary_g32").textContent = `과목수=${g32.n}, 성취도합=${round2(g32.achSum)}, 원점수합=${round2(g32.rawSum)} → ${round2(s32.score).toFixed(2)}점`;
+
+    $("summary_pe").textContent = `N=${peAgg.N}, a(A)=${peAgg.a}, b(B)=${peAgg.b}, c(C)=${peAgg.c} → ${round2(pe).toFixed(2)}점`;
+
+    const lines = [
+      `[일반교과]`,
+      `- 1학년 2학기: ${s12.detail}`,
+      `- 2학년 1학기: ${s21.detail}`,
+      `- 2학년 2학기: ${s22.detail}`,
+      `- 3학년 1학기: ${s31.detail}`,
+      `- 3학년 2학기: ${s32.detail}`,
+      ``,
+      `[체육·예술]`,
+      `- 10 + 20×(3a+2b+1c)/(3N) = ${round2(pe).toFixed(2)} (N=${peAgg.N}, a=${peAgg.a}, b=${peAgg.b}, c=${peAgg.c})`,
+      ``,
+      `[교과활동 합] ${round2(subject).toFixed(2)} / 150`
+    ];
+    $("log").textContent = lines.join("\n");
+
+    if(!anyInputExists()){
+      $("status").textContent = "입력 대기";
+      $("status").className = "pill";
+    } else {
+      $("status").textContent = "계산 완료";
+      $("status").className = "pill";
+    }
+  }
+
+  // 버튼 이벤트
+  document.addEventListener("click", (e) => {
+    const add = e.target?.getAttribute?.("data-add");
+    const clr = e.target?.getAttribute?.("data-clear");
+
+    if(add){
+      if(add === "pe") makeRowPE();
+      else makeRow(add);
+      recalc();
+    }
+    if(clr){
+      if(clr === "pe") clearPE();
+      else clearTerm(clr);
+    }
+  });
+
+  $("btnAddAll").addEventListener("click", () => {
+    const terms = ["g12","g21","g22","g31","g32"];
+    for(const t of terms){
+      if($("tbody_"+t).children.length === 0){
+        for(let i=0;i<5;i++) makeRow(t);
+      }
+    }
+    if($("tbody_pe").children.length === 0){
+      for(let i=0;i<4;i++) makeRowPE();
+    }
+    recalc();
+  });
+
+  $("btnResetAll").addEventListener("click", () => {
+    ["g12","g21","g22","g31","g32"].forEach(clearTerm);
+    clearPE();
+    // 환산표는 그대로 둠
+    recalc();
+  });
+
+  // 환산표 변경 시에도 재계산
+  ["mapA","mapB","mapC","mapD","mapE"].forEach(id => {
+    $(id).addEventListener("input", recalc);
+    $(id).addEventListener("change", recalc);
+  });
+
+  // 초기 상태: 아무 행도 생성하지 않음(빈칸 그대로)
+  recalc();
+</script>
+</body>
+</html>
