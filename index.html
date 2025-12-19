@@ -9,6 +9,7 @@
       --bg:#f6f7fb; --card:#fff; --line:#d9dde7; --line2:#c8cedd;
       --head:#eef2f9; --head2:#f4f6fb; --text:#222; --muted:#666;
       --accent:#1f5fbf; --accent2:#0c3d8a; --danger:#b42318;
+      --soft:#f9fafc;
     }
     body{ margin:0; background:var(--bg); color:var(--text);
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,Noto Sans KR,sans-serif;
@@ -31,22 +32,13 @@
     .pill{ display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--line2); font-size:12px; color:var(--muted); background:var(--head2); }
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
 
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
-    .field{ min-width: 160px; flex:1; }
-    label{ display:block; font-size:12px; color:var(--muted); margin:0 0 6px; }
-    input, select{
-      width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid var(--line2);
-      border-radius:8px; background:#fff; outline:none;
-    }
-    input:focus, select:focus{ border-color: var(--accent); box-shadow:0 0 0 3px rgba(31,95,191,.15); }
-
     table{ width:100%; border-collapse:collapse; margin-top:10px; table-layout:fixed; }
     th, td{ border:1px solid var(--line); padding:8px 8px; font-size:13px; }
     th{ background:var(--head); text-align:center; }
     td{ background:#fff; }
-    td input{ padding:6px 8px; border-radius:6px; }
+    td input, td select{ width:100%; box-sizing:border-box; padding:6px 8px; border-radius:6px; border:1px solid var(--line2); }
     td .badge{
-      display:inline-block; min-width:34px; text-align:center;
+      display:inline-block; width:100%; text-align:center;
       padding:3px 8px; border-radius:999px; border:1px solid var(--line2);
       background:var(--head2); font-weight:700;
     }
@@ -72,7 +64,56 @@
     .big{ font-size:22px; font-weight:800; }
     .kpiTable td{ text-align:right; }
     .kpiTable td:first-child{ text-align:left; }
-    .footnote{ margin-top:12px; font-size:12px; color:var(--muted); line-height:1.5; }
+
+    /* ===== 비교과 예쁘게(추가) ===== */
+    .ncGrid{
+      display:grid; grid-template-columns:1fr; gap:12px; margin-top:8px;
+    }
+    @media (min-width: 720px){
+      .ncGrid{ grid-template-columns: 1fr 1fr; }
+    }
+    .ncCard{
+      border:1px solid var(--line);
+      background:var(--soft);
+      border-radius:12px;
+      padding:12px;
+    }
+    .ncHead{
+      display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;
+    }
+    .ncTitle{ font-weight:800; }
+    .scoreChip{
+      display:inline-flex; align-items:baseline; gap:6px;
+      padding:4px 10px; border-radius:999px;
+      border:1px solid var(--line2);
+      background:#fff;
+      font-weight:800;
+    }
+    .scoreChip small{ font-weight:600; color:var(--muted); }
+    .formRow{
+      display:grid; grid-template-columns: 1fr; gap:10px;
+    }
+    .formField label{
+      display:block; margin:0 0 6px; font-size:12px; color:var(--muted);
+    }
+    .formField input, .formField select{
+      width:100%; box-sizing:border-box;
+      padding:10px 10px; border-radius:10px;
+      border:1px solid var(--line2);
+      background:#fff;
+      outline:none;
+    }
+    .formField input:focus, .formField select:focus{
+      border-color: var(--accent);
+      box-shadow:0 0 0 3px rgba(31,95,191,.14);
+    }
+    .helperLine{
+      margin-top:8px; font-size:12px; color:var(--muted); line-height:1.5;
+    }
+    .miniPill{
+      display:inline-block; padding:2px 8px; border-radius:999px;
+      border:1px solid var(--line2); background:#fff; color:var(--muted); font-size:12px;
+    }
   </style>
 </head>
 <body>
@@ -80,209 +121,246 @@
     <div class="titlebar">
       <h1>고입 내신성적 산출(200점)</h1>
       <p>
-        과목별 <b>원점수(0~100)</b>만 입력하면 성취도(A~E)가 자동 반영됩니다.
+        일반교과는 <b>원점수(0~100)</b>만 입력하면 성취도(A~E)가 자동 반영됩니다.
         <span class="pill">교과 150(일반120+체·예30)</span>
         <span class="pill">비교과 50(출결20+봉사20+학교활동10)</span>
       </p>
     </div>
 
     <div class="grid">
-      <!-- 좌측: 입력(교과+비교과) -->
+      <!-- 입력 -->
       <div class="card">
         <div class="hd">입력</div>
         <div class="bd">
 
-          <details open>
-            <summary>성취도 자동판정 기준(원점수 컷) &amp; 성취도 환산값</summary>
+          <details>
+            <summary>성취도 자동판정 기준(고정)</summary>
             <div class="inside">
               <div class="hint">
-                ※ 이미지에 “원점수→성취도” 기준표가 없어서, 여기 값을 학교/지역 기준에 맞춰 조정하세요.<br/>
-                기본: A≥90, B≥80, C≥70, D≥60, 그 외 E
-              </div>
-              <div class="row" style="margin-top:8px;">
-                <div class="field"><label>A 컷(이상)</label><input id="cutA" type="number" step="1" value="90"></div>
-                <div class="field"><label>B 컷(이상)</label><input id="cutB" type="number" step="1" value="80"></div>
-                <div class="field"><label>C 컷(이상)</label><input id="cutC" type="number" step="1" value="70"></div>
-                <div class="field"><label>D 컷(이상)</label><input id="cutD" type="number" step="1" value="60"></div>
-              </div>
-
-              <div class="hint" style="margin-top:10px;">
-                학기 산출식에서 쓰는 “성취도 평균”은 아래 환산값으로 계산됩니다(기본 A=5..E=1).
-              </div>
-              <div class="row" style="margin-top:8px;">
-                <div class="field"><label>A 환산값</label><input id="mapA" type="number" step="0.1" value="5"></div>
-                <div class="field"><label>B 환산값</label><input id="mapB" type="number" step="0.1" value="4"></div>
-                <div class="field"><label>C 환산값</label><input id="mapC" type="number" step="0.1" value="3"></div>
-                <div class="field"><label>D 환산값</label><input id="mapD" type="number" step="0.1" value="2"></div>
-                <div class="field"><label>E 환산값</label><input id="mapE" type="number" step="0.1" value="1"></div>
+                원점수 → 성취도: <b>A≥90, B≥80, C≥70, D≥60, 그 외 E</b><br/>
+                성취도 환산값: <b>A=5, B=4, C=3, D=2, E=1</b>
               </div>
             </div>
           </details>
 
           <details open>
-            <summary>일반교과 (총 120점) - 학기별 과목(원점수 입력)</summary>
+            <summary>일반교과 (총 120점)</summary>
             <div class="inside">
               <div class="hint">
                 학기점수 = 기본점수 + (성취도평균×계수) + (원점수평균×계수) / 학기별 만점 상한 적용<br/>
-                빈 행은 계산에서 제외됩니다(그대로 비워두기 가능).
+                빈 행은 계산에서 제외됩니다.
               </div>
 
-              <!-- 학기 섹션들 -->
+              <!-- 1-2 -->
               <section style="margin-top:12px;">
-                <div class="row" style="justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
                   <div><b>1학년 2학기</b> <span class="pill">최대 12점</span></div>
-                  <div class="btnbar">
+                  <div class="btnbar" style="margin:0;">
                     <button type="button" data-add="g12">과목 추가</button>
                     <button type="button" class="danger" data-clear="g12">전체 비우기</button>
                   </div>
                 </div>
                 <table>
                   <colgroup><col style="width:48%"><col style="width:22%"><col style="width:16%"><col style="width:14%"></colgroup>
-                  <thead><tr><th>과목명</th><th>원점수(0~100)</th><th>성취도</th><th>삭제</th></tr></thead>
+                  <thead><tr><th>과목명</th><th>원점수</th><th>성취도</th><th>삭제</th></tr></thead>
                   <tbody id="tbody_g12"></tbody>
                 </table>
                 <div class="hint mono" id="summary_g12" style="margin-top:6px;"></div>
               </section>
 
+              <!-- 2-1 -->
               <section style="margin-top:14px;">
-                <div class="row" style="justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
                   <div><b>2학년 1학기</b> <span class="pill">최대 24점</span></div>
-                  <div class="btnbar">
+                  <div class="btnbar" style="margin:0;">
                     <button type="button" data-add="g21">과목 추가</button>
                     <button type="button" class="danger" data-clear="g21">전체 비우기</button>
                   </div>
                 </div>
                 <table>
                   <colgroup><col style="width:48%"><col style="width:22%"><col style="width:16%"><col style="width:14%"></colgroup>
-                  <thead><tr><th>과목명</th><th>원점수(0~100)</th><th>성취도</th><th>삭제</th></tr></thead>
+                  <thead><tr><th>과목명</th><th>원점수</th><th>성취도</th><th>삭제</th></tr></thead>
                   <tbody id="tbody_g21"></tbody>
                 </table>
                 <div class="hint mono" id="summary_g21" style="margin-top:6px;"></div>
               </section>
 
+              <!-- 2-2 -->
               <section style="margin-top:14px;">
-                <div class="row" style="justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
                   <div><b>2학년 2학기</b> <span class="pill">최대 24점</span></div>
-                  <div class="btnbar">
+                  <div class="btnbar" style="margin:0;">
                     <button type="button" data-add="g22">과목 추가</button>
                     <button type="button" class="danger" data-clear="g22">전체 비우기</button>
                   </div>
                 </div>
                 <table>
                   <colgroup><col style="width:48%"><col style="width:22%"><col style="width:16%"><col style="width:14%"></colgroup>
-                  <thead><tr><th>과목명</th><th>원점수(0~100)</th><th>성취도</th><th>삭제</th></tr></thead>
+                  <thead><tr><th>과목명</th><th>원점수</th><th>성취도</th><th>삭제</th></tr></thead>
                   <tbody id="tbody_g22"></tbody>
                 </table>
                 <div class="hint mono" id="summary_g22" style="margin-top:6px;"></div>
               </section>
 
+              <!-- 3-1 -->
               <section style="margin-top:14px;">
-                <div class="row" style="justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
                   <div><b>3학년 1학기</b> <span class="pill">최대 30점</span></div>
-                  <div class="btnbar">
+                  <div class="btnbar" style="margin:0;">
                     <button type="button" data-add="g31">과목 추가</button>
                     <button type="button" class="danger" data-clear="g31">전체 비우기</button>
                   </div>
                 </div>
                 <table>
                   <colgroup><col style="width:48%"><col style="width:22%"><col style="width:16%"><col style="width:14%"></colgroup>
-                  <thead><tr><th>과목명</th><th>원점수(0~100)</th><th>성취도</th><th>삭제</th></tr></thead>
+                  <thead><tr><th>과목명</th><th>원점수</th><th>성취도</th><th>삭제</th></tr></thead>
                   <tbody id="tbody_g31"></tbody>
                 </table>
                 <div class="hint mono" id="summary_g31" style="margin-top:6px;"></div>
               </section>
 
+              <!-- 3-2 -->
               <section style="margin-top:14px;">
-                <div class="row" style="justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;">
                   <div><b>3학년 2학기</b> <span class="pill">최대 30점</span></div>
-                  <div class="btnbar">
+                  <div class="btnbar" style="margin:0;">
                     <button type="button" data-add="g32">과목 추가</button>
                     <button type="button" class="danger" data-clear="g32">전체 비우기</button>
                   </div>
                 </div>
                 <table>
                   <colgroup><col style="width:48%"><col style="width:22%"><col style="width:16%"><col style="width:14%"></colgroup>
-                  <thead><tr><th>과목명</th><th>원점수(0~100)</th><th>성취도</th><th>삭제</th></tr></thead>
+                  <thead><tr><th>과목명</th><th>원점수</th><th>성취도</th><th>삭제</th></tr></thead>
                   <tbody id="tbody_g32"></tbody>
                 </table>
                 <div class="hint mono" id="summary_g32" style="margin-top:6px;"></div>
               </section>
-
             </div>
           </details>
 
-          <details>
-            <summary>체육·예술교과 (총 30점) - 과목(원점수 입력)</summary>
+          <details open>
+            <summary>체육·예술교과 (총 30점)</summary>
             <div class="inside">
               <div class="hint">
                 점수 = 10 + 20 × (3×a + 2×b + 1×c) / (3×N) (상한 30)<br/>
-                a/b/c는 각각 성취도 A/B/C 과목 수, N은 입력된 과목 수(빈 행 제외)로 자동 집계합니다.
+                <b>A/B/C로 선택된 과목만</b> 집계합니다(선택 안 하면 제외).
               </div>
               <div class="btnbar">
                 <button type="button" data-add="pe">과목 추가</button>
                 <button type="button" class="danger" data-clear="pe">전체 비우기</button>
               </div>
               <table>
-                <colgroup><col style="width:54%"><col style="width:22%"><col style="width:12%"><col style="width:12%"></colgroup>
-                <thead><tr><th>과목명</th><th>원점수(0~100)</th><th>성취도</th><th>삭제</th></tr></thead>
+                <colgroup><col style="width:58%"><col style="width:22%"><col style="width:20%"></colgroup>
+                <thead><tr><th>과목명</th><th>성취도(ABC)</th><th>삭제</th></tr></thead>
                 <tbody id="tbody_pe"></tbody>
               </table>
               <div class="hint mono" id="summary_pe" style="margin-top:6px;"></div>
             </div>
           </details>
 
+          <!-- ✅ 예쁘게 개선된 비교과 -->
           <details open>
-            <summary>비교과 (총 50점) - 출결/봉사/학교활동</summary>
+            <summary>비교과 (총 50점)</summary>
             <div class="inside">
-              <div class="row">
-                <div class="field">
-                  <label>1학년 결석일수</label>
-                  <select id="att1">
-                    <option value="" selected>선택</option>
-                    <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                    <option value="4">4</option><option value="5">5</option><option value="6+">6일 이상</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>2학년 결석일수</label>
-                  <select id="att2">
-                    <option value="" selected>선택</option>
-                    <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                    <option value="4">4</option><option value="5">5</option><option value="6+">6일 이상</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label>3학년 결석일수</label>
-                  <select id="att3">
-                    <option value="" selected>선택</option>
-                    <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                    <option value="4">4</option><option value="5">5</option><option value="6+">6일 이상</option>
-                  </select>
-                </div>
-              </div>
-              <div class="hint mono" style="margin-top:8px;">
-                출결점수(합 20): 1학년(6점) 0=6,1=5.4,2=4.8,3=4.2,4=3.6,5=3.0,6+=2.4 /
-                2·3학년(7점) 0=7,1=6.3,2=5.6,3=4.9,4=4.2,5=3.5,6+=2.8
-              </div>
 
-              <div class="row" style="margin-top:12px;">
-                <div class="field">
-                  <label>3개년 봉사시간(총합, 시간)</label>
-                  <input id="vol_h" type="number" min="0" step="1" value="" placeholder="">
-                </div>
-                <div class="field">
-                  <label>수상실적(전체 학기 합계 개수)</label>
-                  <input id="sch_awards" type="number" min="0" step="1" value="" placeholder="">
-                </div>
-                <div class="field">
-                  <label>자치회 임원활동 월 평균점(숫자)</label>
-                  <input id="sch_month_avg" type="number" min="0" step="0.01" value="" placeholder="">
-                </div>
-              </div>
+              <div class="ncGrid">
+                <!-- 출결 -->
+                <div class="ncCard">
+                  <div class="ncHead">
+                    <div class="ncTitle">출결</div>
+                    <div class="scoreChip"><span class="mono" id="sumAtt_chip">0.00</span> <small>/ 20</small></div>
+                  </div>
 
-              <div class="hint" style="margin-top:8px;">
-                봉사(20점): 15시간 이상=20점, 14=19… 8=13, 7시간 이하=12점 (미입력은 0점 처리)<br/>
-                학교활동(10점): (입력값이 하나라도 있으면) 기본 8점 + 수상(개수×0.5) + 임원(월평균점×0.1), 상한 10점 / 둘 다 미입력은 0점
+                  <div class="formRow">
+                    <div class="formField">
+                      <label>1학년 결석일수</label>
+                      <select id="att1">
+                        <option value="" selected>선택</option>
+                        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                        <option value="4">4</option><option value="5">5</option><option value="6+">6일 이상</option>
+                      </select>
+                    </div>
+                    <div class="formField">
+                      <label>2학년 결석일수</label>
+                      <select id="att2">
+                        <option value="" selected>선택</option>
+                        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                        <option value="4">4</option><option value="5">5</option><option value="6+">6일 이상</option>
+                      </select>
+                    </div>
+                    <div class="formField">
+                      <label>3학년 결석일수</label>
+                      <select id="att3">
+                        <option value="" selected>선택</option>
+                        <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                        <option value="4">4</option><option value="5">5</option><option value="6+">6일 이상</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="helperLine">
+                    <span class="miniPill">1학년(6점)</span> 0=6,1=5.4,2=4.8,3=4.2,4=3.6,5=3.0,6+=2.4<br/>
+                    <span class="miniPill">2·3학년(7점)</span> 0=7,1=6.3,2=5.6,3=4.9,4=4.2,5=3.5,6+=2.8
+                  </div>
+                </div>
+
+                <!-- 봉사 -->
+                <div class="ncCard">
+                  <div class="ncHead">
+                    <div class="ncTitle">봉사</div>
+                    <div class="scoreChip"><span class="mono" id="sumVol_chip">0.00</span> <small>/ 20</small></div>
+                  </div>
+
+                  <div class="formRow">
+                    <div class="formField">
+                      <label>3개년 봉사시간(총합, 시간)</label>
+                      <input id="vol_h" type="number" min="0" step="1" value="" placeholder="예: 12">
+                    </div>
+                  </div>
+
+                  <div class="helperLine">
+                    시간 입력 시 자동 점수화: 15시간 이상=20점, 14=19… 8=13, 7시간 이하=12점<br/>
+                    <span class="miniPill">현재 봉사 점수</span> <b class="mono" id="vol_score_inline">0.00</b> / 20
+                  </div>
+                </div>
+
+                <!-- 학교활동 -->
+                <div class="ncCard">
+                  <div class="ncHead">
+                    <div class="ncTitle">학교활동</div>
+                    <div class="scoreChip"><span class="mono" id="sumSch_chip">0.00</span> <small>/ 10</small></div>
+                  </div>
+
+                  <div class="formRow">
+                    <div class="formField">
+                      <label>수상실적(전체 학기 합계 개수)</label>
+                      <input id="sch_awards" type="number" min="0" step="1" value="" placeholder="예: 3">
+                    </div>
+                    <div class="formField">
+                      <label>자치회 임원활동 전체 개월수</label>
+                      <input id="sch_months_total" type="number" min="0" step="1" value="" placeholder="예: 10">
+                    </div>
+                  </div>
+
+                  <div class="helperLine">
+                    (입력값이 하나라도 있으면) 8 + 수상(개수×0.5) + 임원(개월수×0.1), 상한 10<br/>
+                    둘 다 미입력은 0점 처리
+                  </div>
+                </div>
+
+                <!-- 비교과 합계 -->
+                <div class="ncCard">
+                  <div class="ncHead">
+                    <div class="ncTitle">비교과 합계</div>
+                    <div class="scoreChip"><span class="mono" id="sumNon_chip">0.00</span> <small>/ 50</small></div>
+                  </div>
+                  <div class="helperLine">
+                    출결 + 봉사 + 학교활동 점수가 자동 합산됩니다.<br/>
+                    <span class="miniPill">출결</span> <span class="mono" id="sumAtt_mini">0.00</span> /
+                    <span class="miniPill">봉사</span> <span class="mono" id="sumVol_mini">0.00</span> /
+                    <span class="miniPill">학교활동</span> <span class="mono" id="sumSch_mini">0.00</span>
+                  </div>
+                </div>
               </div>
 
             </div>
@@ -292,11 +370,10 @@
             <button type="button" class="primary" id="btnAddAll">각 학기 5과목(빈행) 생성</button>
             <button type="button" class="danger" id="btnResetAll">전체 초기화</button>
           </div>
-
         </div>
       </div>
 
-      <!-- 우측: 결과 -->
+      <!-- 결과 -->
       <div class="card">
         <div class="hd">산출 결과</div>
         <div class="bd">
@@ -330,10 +407,6 @@
               <pre id="log" class="mono" style="white-space:pre-wrap; margin:0; color:var(--muted);"></pre>
             </div>
           </details>
-
-          <div class="footnote">
-            ※ “원점수→성취도” 기준은 지역/학교별로 다를 수 있으니 상단 컷을 맞춰 사용하세요.
-          </div>
         </div>
       </div>
     </div>
@@ -342,43 +415,33 @@
 <script>
   const $ = (id) => document.getElementById(id);
 
-  function num(v){
-    const x = parseFloat(v);
-    return Number.isFinite(x) ? x : 0;
-  }
-  function int(v){
-    const x = parseInt(v,10);
-    return Number.isFinite(x) ? x : 0;
-  }
+  const CUTS = { A:90, B:80, C:70, D:60 };
+  const MAP  = { A:5,  B:4,  C:3,  D:2,  E:1  };
+
+  function num(v){ const x = parseFloat(v); return Number.isFinite(x) ? x : 0; }
+  function int(v){ const x = parseInt(v,10); return Number.isFinite(x) ? x : 0; }
   function clamp(x, lo, hi){ return Math.min(hi, Math.max(lo, x)); }
   function round2(x){ return Math.round((x + Number.EPSILON) * 100) / 100; }
 
-  function getCuts(){
-    // 정렬/검증은 간단히: 값이 이상하면 기본값으로
-    let A = num($("cutA").value), B = num($("cutB").value), C = num($("cutC").value), D = num($("cutD").value);
-    if(!(A>=0 && B>=0 && C>=0 && D>=0)) { A=90;B=80;C=70;D=60; }
-    return {A,B,C,D};
-  }
-  function getMap(){
-    return {
-      A: num($("mapA").value),
-      B: num($("mapB").value),
-      C: num($("mapC").value),
-      D: num($("mapD").value),
-      E: num($("mapE").value),
-    };
+  function gradeFromRaw(rawStr){
+    if(rawStr === "" || rawStr == null) return "";
+    const r = num(rawStr);
+    if(r >= CUTS.A) return "A";
+    if(r >= CUTS.B) return "B";
+    if(r >= CUTS.C) return "C";
+    if(r >= CUTS.D) return "D";
+    return "E";
   }
 
-  function gradeFromRaw(raw){
-    // raw가 빈칸이면 "" 반환
-    if(raw === "" || raw === null || raw === undefined) return "";
-    const r = num(raw);
-    const {A,B,C,D} = getCuts();
-    if(r >= A) return "A";
-    if(r >= B) return "B";
-    if(r >= C) return "C";
-    if(r >= D) return "D";
-    return "E";
+  function gradeSelectABC(value=""){
+    return `
+      <select class="grade">
+        <option value="" ${value===""?"selected":""}>선택</option>
+        <option value="A" ${value==="A"?"selected":""}>A</option>
+        <option value="B" ${value==="B"?"selected":""}>B</option>
+        <option value="C" ${value==="C"?"selected":""}>C</option>
+      </select>
+    `;
   }
 
   function makeRow(term){
@@ -397,8 +460,7 @@
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><input class="subj" type="text" value="" placeholder=""></td>
-      <td><input class="raw" type="number" min="0" max="100" step="0.1" value="" placeholder=""></td>
-      <td style="text-align:center;"><span class="badge gradeBadge">-</span></td>
+      <td>${gradeSelectABC("")}</td>
       <td style="text-align:center;"><button type="button" class="danger btnDel">삭제</button></td>
     `;
     wireRow(tr);
@@ -406,14 +468,11 @@
   }
 
   function wireRow(tr){
-    tr.querySelectorAll("input").forEach(el => {
+    tr.querySelectorAll("input,select").forEach(el => {
       el.addEventListener("input", recalc);
       el.addEventListener("change", recalc);
     });
-    const del = tr.querySelector(".btnDel");
-    if(del){
-      del.addEventListener("click", () => { tr.remove(); recalc(); });
-    }
+    tr.querySelector(".btnDel")?.addEventListener("click", () => { tr.remove(); recalc(); });
   }
 
   function clearTerm(term){
@@ -428,9 +487,7 @@
   }
 
   function collectTerm(term){
-    const map = getMap();
     const rows = Array.from($("tbody_" + term).querySelectorAll("tr"));
-
     let n = 0, achSum = 0, rawSum = 0;
 
     for(const r of rows){
@@ -438,25 +495,15 @@
       const rawStr = (r.querySelector(".raw")?.value ?? "").trim();
 
       const hasSomething = subj !== "" || rawStr !== "";
-      if(!hasSomething) {
-        // 완전 빈 행은 제외 + 배지는 "-"
-        r.querySelector(".gradeBadge").textContent = "-";
-        continue;
-      }
-
-      // 과목으로 인정: 원점수 입력이 있든 없든(이름만 적어도) 1과목으로 카운트하면 왜곡될 수 있어
-      // → "원점수 입력이 있는 행"만 과목으로 카운트
-      if(rawStr === ""){
-        r.querySelector(".gradeBadge").textContent = "-";
-        continue;
-      }
+      if(!hasSomething){ r.querySelector(".gradeBadge").textContent = "-"; continue; }
+      if(rawStr === ""){ r.querySelector(".gradeBadge").textContent = "-"; continue; }
 
       const g = gradeFromRaw(rawStr);
       r.querySelector(".gradeBadge").textContent = g || "-";
 
       n += 1;
       rawSum += num(rawStr);
-      if(g && map[g] != null) achSum += map[g];
+      achSum += (MAP[g] ?? 0);
     }
     return { n, achSum, rawSum };
   }
@@ -465,10 +512,7 @@
     if(n <= 0) return { score: 0, detail: `원점수 입력 과목 없음 → 0점` };
     const s = base + (achSum / n) * kAch + (rawSum / n) * kRaw;
     const capped = clamp(s, 0, max);
-    return {
-      score: capped,
-      detail: `${base} + (성취도평균 ${round2(achSum/n)})×${kAch} + (원점수평균 ${round2(rawSum/n)})×${kRaw} = ${round2(s)} → ${round2(capped)}`
-    };
+    return { score: capped, detail: `${base} + (성취도평균 ${round2(achSum/n)})×${kAch} + (원점수평균 ${round2(rawSum/n)})×${kRaw} = ${round2(s)} → ${round2(capped)}` };
   }
 
   function collectPE(){
@@ -477,19 +521,11 @@
 
     for(const r of rows){
       const subj = (r.querySelector(".subj")?.value ?? "").trim();
-      const rawStr = (r.querySelector(".raw")?.value ?? "").trim();
-      const hasSomething = subj !== "" || rawStr !== "";
-      if(!hasSomething){
-        r.querySelector(".gradeBadge").textContent = "-";
-        continue;
-      }
-      if(rawStr === ""){
-        r.querySelector(".gradeBadge").textContent = "-";
-        continue;
-      }
+      const g = (r.querySelector(".grade")?.value ?? "").trim();
 
-      const g = gradeFromRaw(rawStr);
-      r.querySelector(".gradeBadge").textContent = g || "-";
+      const hasSomething = subj !== "" || g !== "";
+      if(!hasSomething) continue;
+      if(g === "") continue;
 
       N += 1;
       if(g === "A") a += 1;
@@ -506,7 +542,6 @@
   }
 
   function attendanceScore(year, abs){
-    // abs: "0","1"...,"6+" or ""(미선택)
     if(abs === "") return 0;
     const idx = (abs === "6+") ? 6 : int(abs);
     const map1 = [6, 5.4, 4.8, 4.2, 3.6, 3.0, 2.4];
@@ -518,7 +553,6 @@
   }
 
   function volunteerScore(hoursStr){
-    // 미입력은 0점 처리(요청 반영)
     if(hoursStr === "") return 0;
     const h = int(hoursStr);
     if(h >= 15) return 20;
@@ -526,13 +560,12 @@
     return h + 5; // 8~14 → 13~19
   }
 
-  function schoolActivityScore(awardsStr, monthAvgStr){
-    // 둘 다 미입력은 0점, 하나라도 있으면 기본 8점 부여
-    if(awardsStr === "" && monthAvgStr === "") return 0;
+  function schoolActivityScore(awardsStr, monthsStr){
+    if(awardsStr === "" && monthsStr === "") return 0;
     const base = 8;
     const awards = 0.5 * int(awardsStr);
-    const council = 0.1 * num(monthAvgStr);
-    return clamp(base + awards + council, 0, 10);
+    const months = 0.1 * int(monthsStr);
+    return clamp(base + awards + months, 0, 10);
   }
 
   function anyInputExists(){
@@ -546,12 +579,12 @@
     }
     for(const r of Array.from($("tbody_pe").querySelectorAll("tr"))){
       const subj = (r.querySelector(".subj")?.value ?? "").trim();
-      const raw = (r.querySelector(".raw")?.value ?? "").trim();
-      if(subj || raw) return true;
+      const g = (r.querySelector(".grade")?.value ?? "").trim();
+      if(subj || g) return true;
     }
     if($("att1").value || $("att2").value || $("att3").value) return true;
     if($("vol_h").value !== "") return true;
-    if($("sch_awards").value !== "" || $("sch_month_avg").value !== "") return true;
+    if($("sch_awards").value !== "" || $("sch_months_total").value !== "") return true;
     return false;
   }
 
@@ -568,19 +601,19 @@
     const s31 = termScore({ ...g31, base:10, kAch:2.0, kRaw:0.10, max:30 });
     const s32 = termScore({ ...g32, base:10, kAch:2.0, kRaw:0.10, max:30 });
 
-    const general = s12.score + s21.score + s22.score + s31.score + s32.score; // max 120
+    const general = s12.score + s21.score + s22.score + s31.score + s32.score;
 
     const peAgg = collectPE();
-    const pe = peScore(peAgg); // max 30
+    const pe = peScore(peAgg);
 
-    const subject = general + pe; // max 150
+    const subject = general + pe;
 
-    const att = attendanceScore(1,$("att1").value) + attendanceScore(2,$("att2").value) + attendanceScore(3,$("att3").value); // max 20
-    const vol = volunteerScore($("vol_h").value); // max 20
-    const sch = schoolActivityScore($("sch_awards").value, $("sch_month_avg").value); // max 10
-    const non = att + vol + sch; // max 50
+    const att = attendanceScore(1,$("att1").value) + attendanceScore(2,$("att2").value) + attendanceScore(3,$("att3").value);
+    const vol = volunteerScore($("vol_h").value);
+    const sch = schoolActivityScore($("sch_awards").value, $("sch_months_total").value);
+    const non = att + vol + sch;
 
-    const total = subject + non; // max 200
+    const total = subject + non;
 
     $("sumGeneral").textContent = round2(general).toFixed(2);
     $("sumPE").textContent = round2(pe).toFixed(2);
@@ -591,8 +624,20 @@
     $("sumSch").textContent = round2(sch).toFixed(2);
     $("sumNon").textContent = round2(non).toFixed(2);
 
+    // ✅ 비교과 카드 상단 칩/미니 갱신
+    $("sumAtt_chip").textContent = round2(att).toFixed(2);
+    $("sumVol_chip").textContent = round2(vol).toFixed(2);
+    $("sumSch_chip").textContent = round2(sch).toFixed(2);
+    $("sumNon_chip").textContent = round2(non).toFixed(2);
+
+    $("sumAtt_mini").textContent = round2(att).toFixed(2);
+    $("sumVol_mini").textContent = round2(vol).toFixed(2);
+    $("sumSch_mini").textContent = round2(sch).toFixed(2);
+
     $("total200").textContent = round2(total).toFixed(2);
     $("sumTotalRow").textContent = round2(total).toFixed(2);
+
+    $("vol_score_inline").textContent = round2(vol).toFixed(2);
 
     $("summary_g12").textContent = `과목수=${g12.n}, 성취도합=${round2(g12.achSum)}, 원점수합=${round2(g12.rawSum)} → ${round2(s12.score).toFixed(2)}점`;
     $("summary_g21").textContent = `과목수=${g21.n}, 성취도합=${round2(g21.achSum)}, 원점수합=${round2(g21.rawSum)} → ${round2(s21.score).toFixed(2)}점`;
@@ -615,7 +660,7 @@
       ``,
       `[비교과]`,
       `- 출결: ${round2(att).toFixed(2)} / 20`,
-      `- 봉사: ${round2(vol).toFixed(2)} / 20`,
+      `- 봉사: ${round2(vol).toFixed(2)} / 20 (시간=${$("vol_h").value === "" ? "미입력" : $("vol_h").value})`,
       `- 학교활동: ${round2(sch).toFixed(2)} / 10`,
       ``,
       `[합계]`,
@@ -628,7 +673,6 @@
     $("status").textContent = anyInputExists() ? "계산 완료" : "입력 대기";
   }
 
-  // 버튼/이벤트
   document.addEventListener("click", (e) => {
     const add = e.target?.getAttribute?.("data-add");
     const clr = e.target?.getAttribute?.("data-clear");
@@ -653,29 +697,26 @@
     }
     if($("tbody_pe").children.length === 0){
       for(let i=0;i<4;i++) makeRowPE();
-    }
+      }
     recalc();
   });
 
   $("btnResetAll").addEventListener("click", () => {
-    ["g12","g21","g22","g31","g32"].forEach(t => clearTerm(t));
+    ["g12","g21","g22","g31","g32"].forEach(clearTerm);
     clearPE();
-    // 비교과 초기화(빈칸 유지)
     $("att1").value = ""; $("att2").value = ""; $("att3").value = "";
     $("vol_h").value = "";
     $("sch_awards").value = "";
-    $("sch_month_avg").value = "";
+    $("sch_months_total").value = "";
     recalc();
   });
 
-  // 컷/환산값/비교과 변경 시 재계산
-  ["cutA","cutB","cutC","cutD","mapA","mapB","mapC","mapD","mapE","att1","att2","att3","vol_h","sch_awards","sch_month_avg"]
-    .forEach(id => {
-      $(id).addEventListener("input", recalc);
-      $(id).addEventListener("change", recalc);
-    });
+  ["att1","att2","att3","vol_h","sch_awards","sch_months_total"].forEach(id => {
+    $(id).addEventListener("input", recalc);
+    $(id).addEventListener("change", recalc);
+  });
 
-  // 초기: 아무 행도 자동 생성 안 함(빈칸 유지)
+  // 초기
   recalc();
 </script>
 </body>
