@@ -710,6 +710,15 @@
     $(id).addEventListener("change", recalc);
   });
 
+// ✅ 처음 접속 시 각 입력표에 1행씩 기본 생성
+(function initDefaultRows(){
+  const terms = ["g12","g21","g22","g31","g32"];
+  for (const t of terms){
+    if ($("tbody_" + t).children.length === 0) makeRow(t);
+  }
+  if ($("tbody_pe").children.length === 0) makeRowPE();
+})();
+  
   recalc();
 </script>
 </body>
