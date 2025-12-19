@@ -232,14 +232,18 @@
           <details open>
             <summary>체육·예술교과 (총 30점)</summary>
             <div class="inside">
-              <div class="hint">
-                점수 = 10 + 20 × (3×a + 2×b + 1×c) / (3×N) (상한 30)<br/>
-                <b>A/B/C로 선택된 과목만</b> 집계합니다(선택 안 하면 제외).
-              </div>
-              <div class="btnbar">
-                <button type="button" data-add="pe">과목 추가</button>
-                <button type="button" class="danger" data-clear="pe">전체 비우기</button>
-              </div>
+<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+  <div class="hint" style="flex:1; min-width:260px;">
+    점수 = 10 + 20 × (3×a + 2×b + 1×c) / (3×N) (상한 30)<br/>
+    <b>A/B/C로 선택된 과목만</b> 집계합니다(선택 안 하면 제외).
+  </div>
+
+  <div class="btnbar" style="margin:0; align-self:flex-start; justify-content:flex-end;">
+    <button type="button" data-add="pe">과목 추가</button>
+    <button type="button" class="danger" data-clear="pe">전체 비우기</button>
+  </div>
+</div>
+
               <table>
                 <colgroup><col style="width:58%"><col style="width:22%"><col style="width:20%"></colgroup>
                 <thead><tr><th>과목명</th><th>성취도(ABC)</th><th>삭제</th></tr></thead>
