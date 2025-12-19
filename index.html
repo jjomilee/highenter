@@ -342,11 +342,11 @@
                     </div>
                   </div>
 
-                  <div class="helperLine">
-                    (입력값이 하나라도 있으면) 8 + 수상(개수×0.5) + 임원(개월수×0.1), 상한 10<br/>
-                    둘 다 미입력은 0점 처리
+                   <div class="helperLine">
+                       기본 8점 + 수상(개수×0.5) + 임원(개월수×0.1), 상한 10<br/>
+                      <b>둘 다 미입력이어도 기본 8점</b> 적용
                   </div>
-                </div>
+
 
                 <!-- 비교과 합계 -->
                 <div class="ncCard">
@@ -560,13 +560,13 @@
     return h + 5; // 8~14 → 13~19
   }
 
-  function schoolActivityScore(awardsStr, monthsStr){
-    if(awardsStr === "" && monthsStr === "") return 0;
-    const base = 8;
-    const awards = 0.5 * int(awardsStr);
-    const months = 0.1 * int(monthsStr);
-    return clamp(base + awards + months, 0, 10);
-  }
+function schoolActivityScore(awardsStr, monthsStr){
+  const base = 8; // ✅ 미입력이어도 기본 8점
+  const awards = 0.5 * int(awardsStr);   // 미입력/NaN이면 int()가 0
+  const months = 0.1 * int(monthsStr);   // 미입력/NaN이면 int()가 0
+  return clamp(base + awards + months, 0, 10);
+}
+
 
   function anyInputExists(){
     const terms = ["g12","g21","g22","g31","g32"];
