@@ -65,22 +65,16 @@
     .kpiTable td{ text-align:right; }
     .kpiTable td:first-child{ text-align:left; }
 
-    /* ===== 비교과 예쁘게(추가) ===== */
-    .ncGrid{
-      display:grid; grid-template-columns:1fr; gap:12px; margin-top:8px;
-    }
-    @media (min-width: 720px){
-      .ncGrid{ grid-template-columns: 1fr 1fr; }
-    }
+    /* 비교과 UI */
+    .ncGrid{ display:grid; grid-template-columns:1fr; gap:12px; margin-top:8px; }
+    @media (min-width: 720px){ .ncGrid{ grid-template-columns: 1fr 1fr; } }
     .ncCard{
       border:1px solid var(--line);
       background:var(--soft);
       border-radius:12px;
       padding:12px;
     }
-    .ncHead{
-      display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;
-    }
+    .ncHead{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
     .ncTitle{ font-weight:800; }
     .scoreChip{
       display:inline-flex; align-items:baseline; gap:6px;
@@ -90,12 +84,8 @@
       font-weight:800;
     }
     .scoreChip small{ font-weight:600; color:var(--muted); }
-    .formRow{
-      display:grid; grid-template-columns: 1fr; gap:10px;
-    }
-    .formField label{
-      display:block; margin:0 0 6px; font-size:12px; color:var(--muted);
-    }
+    .formRow{ display:grid; grid-template-columns: 1fr; gap:10px; }
+    .formField label{ display:block; margin:0 0 6px; font-size:12px; color:var(--muted); }
     .formField input, .formField select{
       width:100%; box-sizing:border-box;
       padding:10px 10px; border-radius:10px;
@@ -107,9 +97,7 @@
       border-color: var(--accent);
       box-shadow:0 0 0 3px rgba(31,95,191,.14);
     }
-    .helperLine{
-      margin-top:8px; font-size:12px; color:var(--muted); line-height:1.5;
-    }
+    .helperLine{ margin-top:8px; font-size:12px; color:var(--muted); line-height:1.5; }
     .miniPill{
       display:inline-block; padding:2px 8px; border-radius:999px;
       border:1px solid var(--line2); background:#fff; color:var(--muted); font-size:12px;
@@ -258,7 +246,6 @@
             </div>
           </details>
 
-          <!-- ✅ 예쁘게 개선된 비교과 -->
           <details open>
             <summary>비교과 (총 50점)</summary>
             <div class="inside">
@@ -342,11 +329,11 @@
                     </div>
                   </div>
 
-                   <div class="helperLine">
-                       기본 8점 + 수상(개수×0.5) + 임원(개월수×0.1), 상한 10<br/>
-                      <b>둘 다 미입력이어도 기본 8점</b> 적용
+                  <div class="helperLine">
+                    <b>기본 8점</b> + 수상(개수×0.5) + 임원(개월수×0.1), 상한 10<br/>
+                    <b>둘 다 미입력이어도 기본 8점</b> 적용
                   </div>
-
+                </div>
 
                 <!-- 비교과 합계 -->
                 <div class="ncCard">
@@ -557,16 +544,16 @@
     const h = int(hoursStr);
     if(h >= 15) return 20;
     if(h <= 7) return 12;
-    return h + 5; // 8~14 → 13~19
+    return h + 5;
   }
 
-function schoolActivityScore(awardsStr, monthsStr){
-  const base = 8; // ✅ 미입력이어도 기본 8점
-  const awards = 0.5 * int(awardsStr);   // 미입력/NaN이면 int()가 0
-  const months = 0.1 * int(monthsStr);   // 미입력/NaN이면 int()가 0
-  return clamp(base + awards + months, 0, 10);
-}
-
+  // ✅ 학교활동: 둘 다 미입력이어도 기본 8점
+  function schoolActivityScore(awardsStr, monthsStr){
+    const base = 8;
+    const awards = 0.5 * int(awardsStr);
+    const months = 0.1 * int(monthsStr);
+    return clamp(base + awards + months, 0, 10);
+  }
 
   function anyInputExists(){
     const terms = ["g12","g21","g22","g31","g32"];
@@ -602,10 +589,8 @@ function schoolActivityScore(awardsStr, monthsStr){
     const s32 = termScore({ ...g32, base:10, kAch:2.0, kRaw:0.10, max:30 });
 
     const general = s12.score + s21.score + s22.score + s31.score + s32.score;
-
     const peAgg = collectPE();
     const pe = peScore(peAgg);
-
     const subject = general + pe;
 
     const att = attendanceScore(1,$("att1").value) + attendanceScore(2,$("att2").value) + attendanceScore(3,$("att3").value);
@@ -624,7 +609,6 @@ function schoolActivityScore(awardsStr, monthsStr){
     $("sumSch").textContent = round2(sch).toFixed(2);
     $("sumNon").textContent = round2(non).toFixed(2);
 
-    // ✅ 비교과 카드 상단 칩/미니 갱신
     $("sumAtt_chip").textContent = round2(att).toFixed(2);
     $("sumVol_chip").textContent = round2(vol).toFixed(2);
     $("sumSch_chip").textContent = round2(sch).toFixed(2);
@@ -697,7 +681,7 @@ function schoolActivityScore(awardsStr, monthsStr){
     }
     if($("tbody_pe").children.length === 0){
       for(let i=0;i<4;i++) makeRowPE();
-      }
+    }
     recalc();
   });
 
@@ -716,7 +700,6 @@ function schoolActivityScore(awardsStr, monthsStr){
     $(id).addEventListener("change", recalc);
   });
 
-  // 초기
   recalc();
 </script>
 </body>
